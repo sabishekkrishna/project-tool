@@ -1,20 +1,21 @@
-from flask import Flask, jsonify, request
-
+from flask import Flask, request, render_template_string
 app = Flask(__name__)
+projects = []
 
-# In-memory database
-projects = {}
+PAGE = """
+<h1>Project Tool v1 - Add Project</h1>
+<form method="post">
+  <input name="name" placeholder="Project name" required>
+  <button>Create Project</button>
+</form>
+<ul>{% for p in projects %}<li>{{ p }}</li>{% endfor %}</ul>
+"""
 
-# v1 Endpoint: Create Project
-@app.route('/api/project', methods=['POST'])
-def add_project():
-    data = request.json
-    project_name = data.get('name')
-    if not project_name:
-        return jsonify({"error": "Project name required"}), 400
-    
-    projects[project_name] = []
-    return jsonify({"message": f"Project '{project_name}' created successfully", "version": "v1"}), 201
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        projects.append(request.form["name"])
+    return render_template_string(PAGE, projects=projects)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
