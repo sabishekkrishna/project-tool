@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: project-tool-v2-svc
+  name: project-tool-v3-svc
 spec:
   type: NodePort
   selector:
@@ -10,4 +10,4 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 5000
-      nodePort: 30017
+      nodePort: 30019

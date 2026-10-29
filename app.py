@@ -5,7 +5,8 @@ projects = []
 tasks = []
 
 PAGE = """
-<h1>Project Tool v2 - Add Task</h1>
+<h1>Project Tool v3 - View Tasks</h1>
+<a href="/tasks">View all tasks</a>
 
 <h2>Create Project</h2>
 <form method="post" action="/project">
@@ -20,9 +21,17 @@ PAGE = """
   <input name="assignee" placeholder="Assigned to" required>
   <button>Add Task</button>
 </form>
+"""
 
-<h3>Projects</h3>
-<ul>{% for p in projects %}<li>{{ p }}</li>{% endfor %}</ul>
+TASKS_PAGE = """
+<h1>All Tasks</h1>
+<table border="1" cellpadding="6">
+  <tr><th>Project</th><th>Task</th><th>Assigned to</th></tr>
+  {% for t in tasks %}
+  <tr><td>{{ t.project }}</td><td>{{ t.task }}</td><td>{{ t.assignee }}</td></tr>
+  {% endfor %}
+</table>
+<br><a href="/">Back</a>
 """
 
 @app.route("/")
@@ -42,6 +51,10 @@ def add_task():
         "assignee": request.form["assignee"],
     })
     return redirect("/")
+
+@app.route("/tasks")
+def view_tasks():
+    return render_template_string(TASKS_PAGE, tasks=tasks)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
