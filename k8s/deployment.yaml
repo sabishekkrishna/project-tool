@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: project-tool
-        image: YOUR_DOCKERHUB_USER/project-tool:v1
+        image: sabishekkrishna/project-tool:v1
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
