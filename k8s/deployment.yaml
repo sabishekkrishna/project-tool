@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: project-tool-v1
+  name: project-tool-v2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: project-tool-v1
+      app: project-tool-v2
   template:
     metadata:
       labels:
-        app: project-tool-v1
+        app: project-tool-v2
     spec:
       containers:
       - name: project-tool
-        image: sabishekkrishna/project-tool:v1
+        image: sabishekkrishna/project-tool:v2
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
@@ -22,11 +22,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: project-tool-v1-svc
+  name: project-tool-v2-svc
 spec:
   type: NodePort
   selector:
-    app: project-tool-v1
+    app: project-tool-v2
   ports:
   - port: 5000
     targetPort: 5000
