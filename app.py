@@ -4,8 +4,9 @@ from flask import Flask, request, redirect, flash, render_template_string
 app = Flask(__name__)
 app.secret_key = "project-tool-secret"
 
-VERSION = "v1"
+VERSION = "v2"
 projects = []
+tasks = []
 
 HEAD = """
 <!DOCTYPE html>
@@ -58,6 +59,11 @@ tr:hover td{background:#f8fafc}
 """
 
 PAGE = """
+<div class="stats">
+  <div class="stat"><div class="num">{{ projects|length }}</div><div class="lbl">Projects</div></div>
+  <div class="stat"><div class="num">{{ tasks|length }}</div><div class="lbl">Tasks Assigned</div></div>
+</div>
+
 <div class="card">
   <h2>➕ Create New Project</h2>
   <form method="post" action="/project">
@@ -67,15 +73,34 @@ PAGE = """
 </div>
 
 <div class="card">
-  <h2>📁 Projects ({{ projects|length }})</h2>
+  <h2>✅ Assign Task</h2>
+  {% if projects %}
+  <form method="post" action="/task">
+    <select name="project" required>
+      {% for p in projects %}<option value="{{ p.name }}">{{ p.name }}</option>{% endfor %}
+    </select>
+    <input name="task" placeholder="Task description" required maxlength="100">
+    <input name="assignee" placeholder="Assigned to" required maxlength="40">
+    <button type="submit">Add Task</button>
+  </form>
+  {% else %}
+  <div class="empty">Create a project first, then you can assign tasks to it.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>📁 Projects</h2>
   {% if projects %}
   <ul class="list">
     {% for p in projects %}
-    <li><span><strong>{{ loop.index }}.</strong> {{ p.name }}</span><span class="muted">{{ p.created }}</span></li>
+    <li>
+      <span><strong>{{ loop.index }}.</strong> {{ p.name }}</span>
+      <span class="tag">{{ counts.get(p.name, 0) }} task(s)</span>
+    </li>
     {% endfor %}
   </ul>
   {% else %}
-  <div class="empty">No projects yet. Create your first project above.</div>
+  <div class="empty">No projects yet.</div>
   {% endif %}
 </div>
 </div>
@@ -88,7 +113,10 @@ def page(template, **ctx):
 
 @app.route("/")
 def home():
-    return page(PAGE, projects=projects)
+    counts = {}
+    for t in tasks:
+        counts[t["project"]] = counts.get(t["project"], 0) + 1
+    return page(PAGE, projects=projects, tasks=tasks, counts=counts)
 
 @app.route("/project", methods=["POST"])
 def add_project():
@@ -96,6 +124,21 @@ def add_project():
     if name:
         projects.append({"name": name, "created": datetime.now().strftime("%d %b %Y, %I:%M %p")})
         flash(f'Project "{name}" created successfully')
+    return redirect("/")
+
+@app.route("/task", methods=["POST"])
+def add_task():
+    task = request.form["task"].strip()
+    assignee = request.form["assignee"].strip()
+    project = request.form["project"]
+    if task and assignee:
+        tasks.append({
+            "project": project,
+            "task": task,
+            "assignee": assignee,
+            "created": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        })
+        flash(f'Task assigned to {assignee} in "{project}"')
     return redirect("/")
 
 if __name__ == "__main__":
