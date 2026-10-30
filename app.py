@@ -4,7 +4,7 @@ from flask import Flask, request, redirect, flash, render_template_string
 app = Flask(__name__)
 app.secret_key = "project-tool-secret"
 
-VERSION = "v2"
+VERSION = "v3"
 projects = []
 tasks = []
 
@@ -47,18 +47,23 @@ table{width:100%;border-collapse:collapse}
 th{background:#eef2ff;color:#4f46e5;text-align:left;padding:12px;font-size:14px}
 td{padding:12px;border-bottom:1px solid #e2e8f0;font-size:15px}
 tr:hover td{background:#f8fafc}
+.filter{margin-bottom:16px}
 </style>
 </head>
 <body>
 <div class="navbar">
   <h1>📋 Project Tool</h1>
-  <div class="right"><span class="badge">{{ version }}</span></div>
+  <div class="right">
+    <a href="/">Home</a>
+    <a href="/tasks">View Tasks</a>
+    <span class="badge">{{ version }}</span>
+  </div>
 </div>
 <div class="container">
 {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">✔ {{ m }}</div>{% endfor %}{% endwith %}
 """
 
-PAGE = """
+HOME_PAGE = """
 <div class="stats">
   <div class="stat"><div class="num">{{ projects|length }}</div><div class="lbl">Projects</div></div>
   <div class="stat"><div class="num">{{ tasks|length }}</div><div class="lbl">Tasks Assigned</div></div>
@@ -108,6 +113,44 @@ PAGE = """
 </html>
 """
 
+TASKS_PAGE = """
+<div class="stats">
+  <div class="stat"><div class="num">{{ tasks|length }}</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="num">{{ shown|length }}</div><div class="lbl">Showing</div></div>
+</div>
+
+<div class="card">
+  <h2>📋 All Tasks</h2>
+  <form method="get" action="/tasks" class="filter">
+    <select name="project" onchange="this.form.submit()">
+      <option value="">All projects</option>
+      {% for p in projects %}
+      <option value="{{ p.name }}" {% if p.name == selected %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% if shown %}
+  <table>
+    <tr><th>#</th><th>Project</th><th>Task</th><th>Assigned to</th><th>Created</th></tr>
+    {% for t in shown %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><span class="tag">{{ t.project }}</span></td>
+      <td>{{ t.task }}</td>
+      <td>{{ t.assignee }}</td>
+      <td class="muted">{{ t.created }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <div class="empty">No tasks to show. Go to Home and assign a task.</div>
+  {% endif %}
+</div>
+</div>
+</body>
+</html>
+"""
+
 def page(template, **ctx):
     return render_template_string(HEAD + template, version=VERSION, **ctx)
 
@@ -116,7 +159,7 @@ def home():
     counts = {}
     for t in tasks:
         counts[t["project"]] = counts.get(t["project"], 0) + 1
-    return page(PAGE, projects=projects, tasks=tasks, counts=counts)
+    return page(HOME_PAGE, projects=projects, tasks=tasks, counts=counts)
 
 @app.route("/project", methods=["POST"])
 def add_project():
@@ -140,6 +183,12 @@ def add_task():
         })
         flash(f'Task assigned to {assignee} in "{project}"')
     return redirect("/")
+
+@app.route("/tasks")
+def view_tasks():
+    selected = request.args.get("project", "")
+    shown = [t for t in tasks if not selected or t["project"] == selected]
+    return page(TASKS_PAGE, projects=projects, tasks=tasks, shown=shown, selected=selected)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
